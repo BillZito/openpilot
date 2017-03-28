@@ -1262,16 +1262,28 @@ static void* vision_connect_thread(void *args) {
   UIState *s = args;
   while (!do_exit) {
     usleep(100000);
+
     pthread_mutex_lock(&s->lock);
     bool connected = s->vision_connected;
     pthread_mutex_unlock(&s->lock);
     // if (connected) continue;
-    if (false) continue;
+    if (connected) continue;
 
+    //added code
+    int fd = vipc_connect();
+    VisionPacket rp;
+    pthread_mutex_lock(&s->lock);
+
+    s->ipc_fd = fd;
+    ui_init_vision(s, rp.d.ui_bufs, rp.fds);
+    s->vision_connected = true;
+    s->vision_connect_firstrun = true;
+    pthread_mutex_unlock(&s->lock);
+    //ends here
 
     int fd = vipc_connect();
     // if (fd < 0) continue;
-    if (false) continue;
+    if (fd < 0) continue;
 
     VisionPacket p = {
       .type = VISION_UI_SUBSCRIBE,
@@ -1279,7 +1291,7 @@ static void* vision_connect_thread(void *args) {
     err = vipc_send(fd, p);
     if (err < 0) {
       close(fd);
-      // continue;
+      continue;
     }
 
     // printf("init recv\n");
@@ -1287,19 +1299,19 @@ static void* vision_connect_thread(void *args) {
     err = vipc_recv(fd, &rp);
     if (err <= 0) {
       close(fd);
-      // continue;
+      continue;
     }
 
     // assert(rp.type == VISION_UI_BUFS);
     // assert(rp.num_fds == rp.d.ui_bufs.num_bufs + rp.d.ui_bufs.num_front_bufs);
 
-    pthread_mutex_lock(&s->lock);
+    // pthread_mutex_lock(&s->lock);
     // assert(!s->vision_connected);
-    s->ipc_fd = fd;
-    ui_init_vision(s, rp.d.ui_bufs, rp.fds);
-    s->vision_connected = true;
-    s->vision_connect_firstrun = true;
-    pthread_mutex_unlock(&s->lock);
+    // s->ipc_fd = fd;
+    // ui_init_vision(s, rp.d.ui_bufs, rp.fds);
+    // s->vision_connected = true;
+    // s->vision_connect_firstrun = true;
+    // pthread_mutex_unlock(&s->lock);
   }
   return NULL;
 }
