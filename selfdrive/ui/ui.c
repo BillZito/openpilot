@@ -856,8 +856,8 @@ static void ui_draw(UIState *s) {
   } else if (s->awake) {
     ui_draw_base(s);
   } else {
-    // ui_draw_vision(s);
-    ui_draw_blank(s);
+    ui_draw_vision(s);
+    // ui_draw_blank(s);
   }
 
   eglSwapBuffers(s->display, s->surface);
